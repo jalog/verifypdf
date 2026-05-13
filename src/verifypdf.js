@@ -3,6 +3,9 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
+const MAX_DER_LENGTH_BYTES = 4;
+const CONTENTS_SEARCH_WINDOW_BYTES = 8192;
+
 function parseDerLength(buffer) {
   if (!buffer || buffer.length < 2 || buffer[0] !== 0x30) {
     return null;
@@ -14,7 +17,11 @@ function parseDerLength(buffer) {
   }
 
   const lengthBytesCount = firstLengthByte & 0x7f;
-  if (lengthBytesCount === 0 || 2 + lengthBytesCount > buffer.length || lengthBytesCount > 4) {
+  if (
+    lengthBytesCount === 0 ||
+    2 + lengthBytesCount > buffer.length ||
+    lengthBytesCount > MAX_DER_LENGTH_BYTES
+  ) {
     return null;
   }
 
@@ -101,7 +108,7 @@ function parseHexSignature(hexString) {
 function extractContentsHex(pdfText, byteRange) {
   const firstRangeEnd = byteRange[0] + byteRange[1];
   const secondRangeStart = byteRange[2];
-  const markerSearchLowerBound = Math.max(0, firstRangeEnd - 8192);
+  const markerSearchLowerBound = Math.max(0, firstRangeEnd - CONTENTS_SEARCH_WINDOW_BYTES);
 
   const markerIndex = pdfText.lastIndexOf('/Contents', secondRangeStart);
   if (markerIndex >= markerSearchLowerBound) {
@@ -315,19 +322,21 @@ function analyzePdfBuffer(pdfBuffer) {
   if (signatures.length === 0) {
     return {
       isSigned: false,
-      hasEmbeddedCertificate: false,
-      signedByPfxCertificateLikely: false,
+      hasSignerCertificate: false,
+      pfxAssessment: 'No signature found.',
       message: 'No PDF signature (/ByteRange) found.',
       signatures: [],
     };
   }
 
   const analyzed = signatures.map((signature, index) => analyzeSingleSignature(signature, index + 1));
+  const hasSignerCertificate = analyzed.some((item) => Boolean(item.certificateInfo.subject));
 
   return {
     isSigned: true,
-    hasEmbeddedCertificate: analyzed.some((item) => Boolean(item.certificateInfo.subject)),
-    signedByPfxCertificateLikely: analyzed.some((item) => Boolean(item.certificateInfo.subject)),
+    hasSignerCertificate,
+    pfxAssessment:
+      'PFX/PKCS#12 is a key container format and cannot be proven directly from PDF bytes. hasSignerCertificate=true indicates a certificate-based CMS signature, which is commonly created using PFX certificates.',
     signatures: analyzed,
   };
 }

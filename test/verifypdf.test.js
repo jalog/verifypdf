@@ -7,6 +7,7 @@ test('returns unsigned result when no /ByteRange is present', () => {
   const result = analyzePdfBuffer(minimalPdf);
 
   assert.equal(result.isSigned, false);
+  assert.equal(result.hasSignerCertificate, false);
   assert.equal(result.signatures.length, 0);
 });
 
@@ -18,4 +19,14 @@ test('extracts signature metadata and verifies byte range coverage', () => {
   assert.deepEqual(signatures[0].byteRange, [0, 40, 60, 60]);
   assert.equal(signatures[0].byteRangeCoversWholeFile, true);
   assert.ok(signatures[0].signatureDer);
+});
+
+test('handles invalid signature bytes without crashing', () => {
+  const fakeSigned = Buffer.from('/ByteRange [0 40 60 60] /Contents <3003020100>'.padEnd(120, 'A'), 'latin1');
+  const result = analyzePdfBuffer(fakeSigned);
+
+  assert.equal(result.isSigned, true);
+  assert.equal(result.hasSignerCertificate, false);
+  assert.equal(result.signatures[0].signatureVerification.cryptographicIntegrityValid, false);
+  assert.equal(result.signatures[0].tamperCheck.likelyTampered, true);
 });
