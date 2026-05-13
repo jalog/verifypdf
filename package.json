@@ -1,0 +1,22 @@
+{
+  "name": "verifypdf",
+  "version": "1.0.0",
+  "description": "Verify PDF signatures and certificates",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test"
+  },
+  "bin": {
+    "verifypdf": "index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jalog/verifypdf.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jalog/verifypdf/issues"
+  },
+  "homepage": "https://github.com/jalog/verifypdf#readme"
+}
