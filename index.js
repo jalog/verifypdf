@@ -6,7 +6,7 @@ const { analyzePdfFile } = require('./src/verifypdf');
 function main() {
   const inputPath = process.argv[2];
   if (!inputPath) {
-    console.error('Usage: node index.js <path-to-pdf>');
+    console.error('Usage: verifypdf <path-to-pdf>');
     process.exit(1);
   }
 

@@ -101,12 +101,13 @@ function parseHexSignature(hexString) {
 function extractContentsHex(pdfText, byteRange) {
   const firstRangeEnd = byteRange[0] + byteRange[1];
   const secondRangeStart = byteRange[2];
+  const markerSearchLowerBound = Math.max(0, firstRangeEnd - 8192);
 
   const markerIndex = pdfText.lastIndexOf('/Contents', secondRangeStart);
-  if (markerIndex >= 0) {
+  if (markerIndex >= markerSearchLowerBound) {
     const open = pdfText.indexOf('<', markerIndex);
     const close = open >= 0 ? pdfText.indexOf('>', open + 1) : -1;
-    if (open >= 0 && close > open && close <= secondRangeStart) {
+    if (open >= markerIndex && close > open && close <= secondRangeStart) {
       return pdfText.slice(open + 1, close);
     }
   }
@@ -220,7 +221,7 @@ function analyzeSingleSignature(signature, index) {
       contentPath,
       '-noverify',
       '-out',
-      '/dev/null',
+      os.devNull,
     ]);
     cryptographicIntegrityValid = integrityResult.ok;
 
@@ -255,7 +256,7 @@ function analyzeSingleSignature(signature, index) {
         '-purpose',
         'any',
         '-out',
-        '/dev/null',
+        os.devNull,
       ]);
 
       certificateTrusted = trustResult.ok;
@@ -314,6 +315,7 @@ function analyzePdfBuffer(pdfBuffer) {
   if (signatures.length === 0) {
     return {
       isSigned: false,
+      hasEmbeddedCertificate: false,
       signedByPfxCertificateLikely: false,
       message: 'No PDF signature (/ByteRange) found.',
       signatures: [],
@@ -324,6 +326,7 @@ function analyzePdfBuffer(pdfBuffer) {
 
   return {
     isSigned: true,
+    hasEmbeddedCertificate: analyzed.some((item) => Boolean(item.certificateInfo.subject)),
     signedByPfxCertificateLikely: analyzed.some((item) => Boolean(item.certificateInfo.subject)),
     signatures: analyzed,
   };

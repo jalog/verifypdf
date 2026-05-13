@@ -9,13 +9,14 @@ Node.js CLI tool to inspect whether a PDF contains a digital signature, extract 
 ## Usage
 
 ```bash
-node index.js /absolute/or/relative/path/to/file.pdf
+verifypdf /absolute/or/relative/path/to/file.pdf
 ```
 
 The command prints JSON with:
 
 - `isSigned`: whether the PDF has signature data (`/ByteRange`)
-- `signedByPfxCertificateLikely`: signature includes an X.509 certificate (common for PFX/PKCS#12 signing workflows)
+- `hasEmbeddedCertificate`: signature includes an embedded X.509 certificate
+- `signedByPfxCertificateLikely`: best-effort flag; true when an embedded X.509 signer certificate is present (common in PFX/PKCS#12 workflows)
 - `signatures[].certificateInfo`: signer certificate subject/issuer/validity
 - `signatures[].signatureVerification`: integrity + trust validation
 - `signatures[].timestampVerification`: signing time metadata checks
